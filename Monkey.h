@@ -18,6 +18,9 @@ public:
 	int sendTrue;
 	int sendFalse;
 
+	std::string op;
+	int div;
+
 	unsigned long long inspect{ 0 };
 
 	Monkey() : sendTrue{}, sendFalse{} {};

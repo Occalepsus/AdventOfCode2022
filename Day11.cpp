@@ -25,17 +25,18 @@
 //	return fst * scd;
 //}
 
-unsigned long long day11P2(std::vector<std::string> input) {
-	auto monkeys{ new std::vector<Monkey> };
+size_t day11P2(std::vector<std::string> input) {
+	auto monkeys{ std::vector<Monkey>() };
 	getMonkeys2(input, monkeys);
-	monkeys->shrink_to_fit();
+	monkeys.shrink_to_fit();
 
-	for (int i{ 0 }; i < 10000; i++)
-		for (auto& m : *monkeys)
+	for (int i{ 0 }; i < 1000; i++)
+		for (auto& m : monkeys)
 			m.makeTurn();
 
-	int fst{ 0 }, scd{ 0 };
-	for (auto& m : *monkeys) {
+	size_t fst{ 0 }, scd{ 0 };
+	for (auto& m : monkeys) {
+		std::cout << m.inspect << "\n";
 		if (m.inspect > fst) {
 			scd = fst;
 			fst = m.inspect;
@@ -119,7 +120,7 @@ unsigned long long day11P2(std::vector<std::string> input) {
 //	}
 //}
 
-void getMonkeys2(std::vector<std::string> input, std::vector<Monkey>* monkeys) {
+void getMonkeys2(std::vector<std::string> input, std::vector<Monkey>& monkeys) {
 	std::regex rgxMonkey("^Monkey ([0-9]+):");
 	std::regex rgxStart(R"(^  Starting items: ((?:(?:[0-9]+)(?:, )?)*))");
 	std::regex rgxOperation(R"(^  Operation: new = old (\*|\+) ([0-9]+|old))");
@@ -133,6 +134,9 @@ void getMonkeys2(std::vector<std::string> input, std::vector<Monkey>* monkeys) {
 	std::string op;
 	std::string opValue;
 	testFunction* testFunc{};
+
+	int div;
+	std::string opt;
 
 	for (std::string line : input) {
 		std::smatch match;
@@ -152,9 +156,10 @@ void getMonkeys2(std::vector<std::string> input, std::vector<Monkey>* monkeys) {
 		else if (std::regex_match(line, match, rgxOperation)) {
 			op = match[1].str();
 			opValue = match[2].str();
+			opt = match[0];
 		}
 		else if (std::regex_match(line, match, rgxTest)) {
-			int div{ std::stoi(match[1].str()) };
+			div = std::stoi(match[1].str());
 			if (op == "*") {
 				if (opValue == "old") {
 					testFunc = new testFunction([div](unsigned long long* item) {
@@ -173,7 +178,7 @@ void getMonkeys2(std::vector<std::string> input, std::vector<Monkey>* monkeys) {
 			else {
 				int value{ std::stoi(opValue) };
 				testFunc = new testFunction([div, value](unsigned long long* item) {
-					*item = (*item + value) / 3;
+					*item = *item + value;
 					return *item % div == 0;
 					});
 			}
@@ -184,8 +189,10 @@ void getMonkeys2(std::vector<std::string> input, std::vector<Monkey>* monkeys) {
 		else if (std::regex_match(line, match, rgxFalse)) {
 			ifFalse = new int(std::stoi(match[1].str()));
 
-			monkey = Monkey(items, monkeys, *ifTrue, *ifFalse, testFunc);
-			monkeys->push_back(monkey);
+			monkey = Monkey(items, &monkeys, *ifTrue, *ifFalse, testFunc);
+			monkey.div = div;
+			monkey.op = opt;
+			monkeys.push_back(monkey);
 		}
 	}
 }
