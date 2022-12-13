@@ -14,6 +14,8 @@ std::vector<std::string> readInputFile(std::string path) {
     while (std::getline(inputFile, line)) {
         res.push_back(line.substr(0, line.find('\r')));
     }
+    std::cout << "File successfully read.\n";
+
     return res;
 }
 
