@@ -65,8 +65,6 @@ int day15P2(std::vector<std::string> input) {
 		sensors.push_back(sensor(x, y, bx, by));
 	}
 
-	std::vector<std::vector<interval>> keptIntervals{};
-
 	for (long line{ 0 }; line < 4000000; line++) {
 		std::vector<interval> intervals{};
 		for (auto& sensor : sensors) {
@@ -80,21 +78,19 @@ int day15P2(std::vector<std::string> input) {
 		}
 		if (intervals.size() == 1) {
 			if (!(intervals[0].start <= 0 && intervals[0].end >= 4000000)) {
-				keptIntervals.push_back(intervals);
+				std::cout << "Line " << line << ": [" << intervals[0].start << ", " << intervals[0].end << "]\n";
 			}
 			continue;
 		}
 		else if (intervals.size() > 1) {
-			keptIntervals.push_back(intervals);
+			std::cout << "Line " << line << ": ";
+			std::sort(intervals.begin(), intervals.end());
+			for (auto& i : intervals) {
+				std::cout << "[" << i.start << ", " << i.end << "], ";
+			}
+			std::cout << "\n";
 			continue;
 		}
-	}
-
-	for (auto& vec : keptIntervals) {
-		for (auto& i : vec) {
-			std::cout << "[" << i.start << ", " << i.end << "] ";
-		}
-		std::cout << "\n";
 	}
 	return 0;
 }
