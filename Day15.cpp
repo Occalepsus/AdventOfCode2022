@@ -66,20 +66,28 @@ int day15P2(std::vector<std::string> input) {
 	}
 
 	std::vector<std::vector<interval>> keptIntervals{};
-	std::mutex m;
-	std::vector<std::thread> threads{};
 
-	for (int i{ 0 }; i < 8; i++) {
-		const long begin = i * 500000;
-		threads.emplace_back([&keptIntervals, &sensors, &m, &begin]() {
-			for (long line{ 0 }; line < 500000; line++) {
-				lookForTheInterval(sensors, begin + line, keptIntervals, m);
+	for (long line{ 0 }; line < 4000000; line++) {
+		std::vector<interval> intervals{};
+		for (auto& sensor : sensors) {
+			//std::cout << std::abs(line - sensor.y) << ", " << sensor.radius() << ": " << (std::abs(line - sensor.y) < sensor.radius()) << ". ";
+			//std::cout << sensor.y - sensor.radius() << ", " << sensor.y + sensor.radius() << ". ";
+			interval i{ intervalFromSensor(sensor, line) };
+			//std::cout << "[" << i.start << ", " << i.end << "]" << "\n";
+			if (i.size() > 0) {
+				insertInterval(intervals, i);
 			}
-		});
-	}
-
-	for (auto& thread : threads) {
-		thread.join();
+		}
+		if (intervals.size() == 1) {
+			if (!(intervals[0].start <= 0 && intervals[0].end >= 4000000)) {
+				keptIntervals.push_back(intervals);
+			}
+			continue;
+		}
+		else if (intervals.size() > 1) {
+			keptIntervals.push_back(intervals);
+			continue;
+		}
 	}
 
 	for (auto& vec : keptIntervals) {
@@ -91,30 +99,6 @@ int day15P2(std::vector<std::string> input) {
 	return 0;
 }
 
-void lookForTheInterval(std::vector<sensor>& sensors, long line, std::vector<std::vector<interval>>& keptIntervals, std::mutex& m) {
-	std::vector<interval> intervals{};
-	for (auto& sensor : sensors) {
-		//std::cout << std::abs(line - sensor.y) << ", " << sensor.radius() << ": " << (std::abs(line - sensor.y) < sensor.radius()) << ". ";
-		//std::cout << sensor.y - sensor.radius() << ", " << sensor.y + sensor.radius() << ". ";
-		interval i{ intervalFromSensor(sensor, line) };
-		//std::cout << "[" << i.start << ", " << i.end << "]" << "\n";
-		if (i.size() > 0) {
-			insertInterval(intervals, i);
-		}
-	}
-	if (intervals.size() == 1) {
-		if (!(intervals[0].start <= 0 && intervals[0].end >= 4000000)) {
-			std::lock_guard lock(m);
-			keptIntervals.push_back(intervals);
-		}
-		return;
-	}
-	else if (intervals.size() > 1) {
-		std::lock_guard lock(m);
-		keptIntervals.push_back(intervals);
-		return;
-	}
-}
 
 interval intervalFromSensor(sensor& s, int line) {
 	if (std::abs(line - s.y) < s.radius()) {
