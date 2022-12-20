@@ -20,7 +20,7 @@ size_t day15P1(std::vector<std::string> input) {
 	std::vector<interval> intervals{};
 
 	for (auto& sensor : sensors) {
-		std::cout << std::abs(line - sensor.y) << ", " << sensor.radius() << ": " << (std::abs(line - sensor.y) < sensor.radius()) << ". ";
+		std::cout << std::abs(line - sensor.y) << ", " << sensor.radius() << ": " << (std::abs(line - sensor.y) < static_cast<__int64>(sensor.radius())) << ". ";
 		std::cout << sensor.y - sensor.radius() << ", " << sensor.y + sensor.radius() << ". ";
 		interval i{ intervalFromSensor(sensor, line) };
 		std::cout << "[" << i.start << ", " << i.end << "]" << "\n";
@@ -97,7 +97,7 @@ int day15P2(std::vector<std::string> input) {
 
 
 interval intervalFromSensor(sensor& s, int line) {
-	if (std::abs(line - s.y) < s.radius()) {
+	if (std::abs(line - s.y) < static_cast<__int64>(s.radius())) {
 		size_t a{ s.radius() - std::abs(line - s.y) };
 		return interval(s.x - a, s.x + a);
 	}

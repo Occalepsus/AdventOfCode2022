@@ -3,8 +3,6 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
-#include <thread>
-#include <mutex>
 
 struct sensor {
 	__int64 x;
@@ -89,8 +87,6 @@ struct interval {
 
 size_t day15P1(std::vector<std::string> input);
 int day15P2(std::vector<std::string> input);
-
-void lookForTheInterval(std::vector<sensor>& sensors, long line, std::vector<std::vector<interval>>& keptIntervals, std::mutex& m);
 
 interval intervalFromSensor(sensor& s, int line);
 
