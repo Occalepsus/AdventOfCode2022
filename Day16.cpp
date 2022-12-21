@@ -6,7 +6,7 @@
 int day16P1(const std::vector<std::string>& input) {
 	std::vector<valveNetwork> network{ getNetwork(input) };
 
-	return findMaxStream(0, network, std::vector<bool>(network.size(), false), 30);
+	return findMaxStream(0, network, std::vector<bool>(network.size(), false), 20);
 }
 
 std::vector<valveNetwork> getNetwork(const std::vector<std::string>& input) {
@@ -24,11 +24,11 @@ std::vector<valveNetwork> getNetwork(const std::vector<std::string>& input) {
 		network[valveId].stream = stream;
 
 		std::string list{ matchLine[3].str() };
-		std::regex_match(list, matchTo, regexTo);
-
-		for (int m{ 1 }; m < matchTo.size(); m++) {
-			network[valveId].reachable.push_back(matchTo[m].str()[0] - 'A' * 26 + matchTo[m].str()[1] - 'A');
-		}
+		do {
+			std::regex_search(list, matchTo, regexTo);
+			network[valveId].reachable.push_back(static_cast<short>(matchTo[1].str()[0] - 'A') * 26 + matchTo[1].str()[1] - 'A');
+			list = matchTo.suffix();
+		} while (list.length() > 0);
 	}
 
 	return network;
