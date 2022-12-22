@@ -3,6 +3,9 @@
 #include <iostream>
 
 const short fallingRocks = 2022;
+const size_t fallingRocks2 = 10;//1000000000000;
+
+const short buffer = 1000;
 
 int day17P1(const std::vector<std::string>& input) {
 	/*
@@ -92,6 +95,96 @@ void rockFall(std::vector<std::vector<short>>& chamber, const std::vector<Rock>&
 	}
 
 	maxHeight = std::max(maxHeight, pos.y + rocks[sel][rocks[sel].size() - 2].y + 1);
+}
+
+int day17P2(const std::vector<std::string>& input) {
+	const std::vector<Rock2> rocks{
+		std::vector<Rock2>({
+			Rock2({Coord2(0, 0), Coord2(1, 0), Coord2(2, 0), Coord2(3, 0)}),
+			Rock2({Coord2(0, 1), Coord2(1, 0), Coord2(1, 1), Coord2(1, 2), Coord2(2, 1)}),
+			Rock2({Coord2(0, 0), Coord2(1, 0), Coord2(2, 0), Coord2(2, 2), Coord2(2, 1)}),
+			Rock2({Coord2(0, 0), Coord2(0, 1), Coord2(0, 3), Coord2(0, 2)}),
+			Rock2({Coord2(0, 0), Coord2(1, 0), Coord2(0, 1), Coord2(1, 1)})
+		}
+	) };
+
+	std::vector<std::deque<short>> chamber(7, std::deque<short>(buffer + 10, 0));
+	size_t maxHeight{ 0 };
+	size_t bottomHeight{ 0 };
+	size_t curSteam{ 0 };
+
+	for (size_t i{ 0 }; i < fallingRocks2; i++) {
+		while (bottomHeight + buffer < maxHeight) {
+			chamber[0].push_front(0);
+			chamber[1].push_front(0);
+			chamber[2].push_front(0);
+			chamber[3].push_front(0);
+			chamber[4].push_front(0);
+			chamber[5].push_front(0);
+			chamber[6].push_front(0);
+
+			chamber[0].pop_back();
+			chamber[1].pop_back();
+			chamber[2].pop_back();
+			chamber[3].pop_back();
+			chamber[4].pop_back();
+			chamber[5].pop_back();
+			chamber[6].pop_back();
+
+			bottomHeight++;
+		}
+
+		rockFallP2(chamber, rocks, input, maxHeight, bottomHeight, i % 5, curSteam);
+	}
+	//displayRocks(chamber, maxHeight);
+
+	return maxHeight;
+}
+
+void rockFallP2(std::vector<std::deque<short>>& chamber, const std::vector<Rock2>& rocks, const std::vector<std::string>& input, size_t& maxHeight, size_t& bottomHeight, char sel, size_t& curSteam) {
+	char posX{ 2 };
+	size_t posY{ maxHeight + 4 };
+
+	bool placed{ false };
+	while (!placed) {
+		// Falls
+		posY--;
+
+		// Pushed by steam
+		bool stuck{ false };
+		int dir{ input[0][curSteam] == '<' ? -1 : 1 };
+		if (dir == -1 && posX == 0) stuck = true;
+		else if (dir == 1 && posX + rocks[sel][rocks[sel].size() - 1].x == 6) stuck = true;
+
+		if (!stuck) {
+			for (auto& c : rocks[sel]) {
+				if (chamber[posX + c.x + dir][posY - bottomHeight + c.y] > 0) {
+					stuck = true;
+					break;
+				}
+			}
+		}
+		if (!stuck) posX += dir;
+
+		for (auto& c : rocks[sel]) {
+			if (posY - bottomHeight == 0 || chamber[posX + c.x][posY - bottomHeight + c.y - 1] > 0) {
+				// test if block is lost
+				if (bottomHeight != 0 && posY - bottomHeight <= 0) {
+					placed = true;
+					break;
+				}
+				// place the block
+				for (auto& c : rocks[sel]) chamber[posX + c.x][posY - bottomHeight + c.y] = sel + 1;
+				placed = true;
+				break;
+			}
+		}
+
+		// Steam change
+		curSteam = (curSteam + 1) % input[0].size();
+	}
+
+	maxHeight = std::max(maxHeight, posY + rocks[sel][rocks[sel].size() - 2].y + 1);
 }
 
 void displayRocks(std::vector<std::vector<short>>& chamber, int& maxHeight) {
