@@ -2,9 +2,9 @@
 #include <iostream>
 #include <string>
 
-#include "Day17.h"
+#include "Day18.h"
 
 int main() {
-	auto res{ day17P2(readInputFile("input.txt")) };
+	auto res{ day18P1(readInputFile("input.txt")) };
 	std::cout << "\nResult: " << res << "\n";
 }
