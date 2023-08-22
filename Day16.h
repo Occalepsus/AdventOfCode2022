@@ -2,17 +2,26 @@
 
 #include <string>
 #include <vector>
+#include <map>
+#include <array>
 
-struct valveNetwork {
-	char stream;
-	std::vector<short> reachable;
+struct valve {
+	const char stream;
+	std::vector<short> neighbours;
 
-	valveNetwork() : stream(0) {};
-	valveNetwork(char value) : stream(value) {};
+	explicit valve(char stream) : stream{ stream } {};
 };
+using network_t = std::map<short, valve>;
 
-int day16P1(const std::vector<std::string>& input);
+using valvesStates_t = std::map<short, std::array<bool, 30>>;
 
-std::vector<valveNetwork> getNetwork(const std::vector<std::string>& input);
+int day16P1(std::vector<std::string> const& input);
 
-int findMaxStream(short start, std::vector<valveNetwork>& network, std::vector<bool> openValves, char time);
+network_t getNetwork(std::vector<std::string> const& input);
+
+int findMaxStream(short start, network_t const& network, valvesStates_t& valvesStates, char time);
+
+short hashValveName(std::string const& name);
+
+valvesStates_t initValvesStates(network_t const& network);
+void openValve(short valveId, valvesStates_t& valvesStates, char time, bool open);

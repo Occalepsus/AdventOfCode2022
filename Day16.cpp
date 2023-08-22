@@ -3,30 +3,42 @@
 #include <iostream>
 #include <regex>
 
-int day16P1(const std::vector<std::string>& input) {
-	std::vector<valveNetwork> network{ getNetwork(input) };
+int day16P1(std::vector<std::string> const& input) {
+	auto network{ getNetwork(input) };
 
-	return findMaxStream(0, network, std::vector<bool>(network.size(), false), 20);
+	auto valvesStates{ initValvesStates(network) };
+
+	std::cout << "Network created.\nBeginning calculations.\n";
+
+	return findMaxStream(0, network, valvesStates, 0);
 }
 
-std::vector<valveNetwork> getNetwork(const std::vector<std::string>& input) {
-	std::vector<valveNetwork> network(std::vector<valveNetwork>(26 * 26));
+network_t getNetwork(std::vector<std::string> const& input) {
+	// Construct a new network, with the same size as the input
+	auto network{ network_t() };
+	auto rawNeighbours{ std::map<short, std::string>() };
 
+	// First getting all valves and their neighbours as raw string
 	std::regex regexLine{ std::regex("Valve ([A-Z]{2}) has flow rate=([0-9]+); tunnel(?:s?) lead(?:s?) to valve(?:s?) ((?:(?:[A-Z]{2})(?:, )?)+)") };
-	std::regex regexTo{ std::regex("([A-Z]{2})") };
 	for (auto& line : input) {
 		std::smatch matchLine;
-		std::smatch matchTo;
 		std::regex_match(line, matchLine, regexLine);
 
-		short valveId{ (matchLine[1].str()[0] - 'A') * 26 + matchLine[1].str()[1] - 'A' };
+		short valveId{ hashValveName(matchLine[1]) };
 		char stream{ static_cast<char>(std::stoi(matchLine[2].str())) };
-		network[valveId].stream = stream;
+		
+		// Adding the valve at the valveId, with the stream as the flow rate
+		network.try_emplace(valveId, stream);
+		rawNeighbours.try_emplace(valveId, matchLine[3].str());
+	}
 
-		std::string list{ matchLine[3].str() };
+	// Then getting all neighbours for each valve from raw string
+	std::regex regexTo{ std::regex("([A-Z]{2})") };
+	for (auto& [valveId, list] : rawNeighbours) {
+		std::smatch matchTo;
 		do {
 			std::regex_search(list, matchTo, regexTo);
-			network[valveId].reachable.push_back(static_cast<short>(matchTo[1].str()[0] - 'A') * 26 + matchTo[1].str()[1] - 'A');
+			network.at(valveId).neighbours.push_back(hashValveName(matchTo[1].str()));
 			list = matchTo.suffix();
 		} while (list.length() > 0);
 	}
@@ -34,35 +46,66 @@ std::vector<valveNetwork> getNetwork(const std::vector<std::string>& input) {
 	return network;
 }
 
-int findMaxStream(short start, std::vector<valveNetwork>& network, std::vector<bool> openValves, char time) {
-	if (time == 1) {
-		if (!openValves[start]) {
-			openValves.push_back(start);
-			return network[start].stream;
+int findMaxStream(short start, network_t const& network, valvesStates_t& valvesStates, char time) {
+	int maxStream{};
+
+	valve const& startValve{ network.at(start) };
+
+	// First by opening the valve
+	if (startValve.stream > 0 && valvesStates[start][time]) {
+		if (time == 29) {
+			return startValve.stream;
 		}
-		else return 0;
-	}
-	else if (time > 1) {
-		int max{};
-		std::vector<bool> newOpenValves{};
-		for (auto& valve : network[start].reachable) {
-			std::vector<bool> openValvesWith{ openValves }, openValvesWithout{ openValves };
-			int streamWith{ findMaxStream(valve, network, openValvesWith, time - 1) };
-			int streamWithout{ openValves[valve] && network[valve].stream > 0 ? findMaxStream(valve, network, openValvesWithout, time - 2) + network[valve].stream : 0};
-			
-			if (streamWith > max) {
-				max = streamWith;
-				newOpenValves = openValvesWith;
+		else {
+			openValve(start, valvesStates, time, false);
+			if (int stream{ findMaxStream(start, network, valvesStates, time + 1) + startValve.stream }; stream > maxStream) {
+				maxStream = stream;
 			}
-			if (streamWithout > max) {
-				max = streamWithout;
-				newOpenValves = openValvesWithout;
+			// Reset the valve state
+			openValve(start, valvesStates, time, true);
+		}
+		if (time < 5) {
+			std::cout << "Opened valve " << start << " at time " << static_cast<int>(time) << "\n";
+			std::cout << "Actual score " << maxStream << "\n";
+		}
+	}
+
+	// Second by opening the neighbours
+	if (time < 29) {
+		for (auto& neighbour : startValve.neighbours) {
+			if (int stream{ findMaxStream(neighbour, network, valvesStates, time + 1) }; stream > maxStream) {
+				maxStream = stream;
 			}
 		}
-		openValves = newOpenValves;
-		return max;
 	}
-	else {
-		throw std::out_of_range("time parameter is null or negative, which is not possible");
+
+	return maxStream;
+}
+
+
+short hashValveName(std::string const& name) {
+	return static_cast<short>(name[0] - 'A') * 26 + name[1] - 'A';
+}
+valvesStates_t initValvesStates(network_t const& network) {
+	valvesStates_t valvesStates;
+	for (auto& [valveId, _] : network) {
+		valvesStates.try_emplace(valveId /* emplacing a default constructed object */);
+		for (int i{}; i < 20; i++) {
+			valvesStates[valveId][i] = true;
+		}
+	}
+	return valvesStates;
+}
+void openValve(short valveId, valvesStates_t& valvesStates, char time, bool open) {
+	auto& states{ valvesStates[valveId] };
+	for (int i{ time }; i < 20; i++) {
+		states[i] = open;
 	}
 }
+
+//void resetValvesStates(valvesStates_t& valvesStates, int time) {
+//	for (auto& [_, states] : valvesStates) {
+//		// Resetting it to the previous state (or true if time == 0)
+//		states[time] = time == 0 ? true : states[static_cast<size_t>(time) - 1];
+//	}
+//}
